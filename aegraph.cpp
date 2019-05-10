@@ -10,6 +10,7 @@
 #include <cassert>
 #include <stack>
 #include "./aegraph.h"
+#include <string.h>
 
 std::string strip(std::string s) {
     // deletes whitespace from the beginning and end of the string
@@ -250,16 +251,40 @@ std::vector<std::vector<int>> AEGraph::get_paths_to(const AEGraph& other)
     return paths;
 }
 
+
 std::vector<std::vector<int>> AEGraph::possible_double_cuts() const {
     // 10p
-    return {};
+    std::vector<std::vector<int>> res;
+    std::vector<std::vector<int>> temp_res;
+    std::vector<int> road;
+    for (auto it = 0; it < subgraphs.size(); ++it) {
+
+      if (subgraphs[it].num_atoms() == 0 && subgraphs[it].num_subgraphs() == 1) {
+        road.clear();
+        road.push_back(it);
+        res.push_back(road);
+      }
+
+      temp_res = subgraphs[it].possible_double_cuts();
+
+      for (auto jt = 0; jt < temp_res.size(); ++jt) {
+        temp_res[jt].insert(temp_res[jt].begin(), it);
+        res.push_back(temp_res[jt]);
+      }
+
+    }
+    return res;
 }
 
 AEGraph AEGraph::double_cut(std::vector<int> where) const {
     // 10p
-    return AEGraph("()");
-}
+    AEGraph g = *this;
+    for (auto it = 0; it < subgraphs.size(); ++it) {
 
+    }
+    g.sort();
+    return g;
+}
 
 std::vector<std::vector<int>> AEGraph::possible_erasures(int level) const {
     // 10p
@@ -341,4 +366,3 @@ AEGraph AEGraph::deiterate(std::vector<int> where) const {
     // 10p
     return AEGraph("()");
 }
-
