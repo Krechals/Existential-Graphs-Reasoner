@@ -10,7 +10,6 @@
 #include <cassert>
 #include <stack>
 #include "./aegraph.h"
-#include <string.h>
 
 std::string strip(std::string s) {
     // deletes whitespace from the beginning and end of the string
@@ -251,7 +250,6 @@ std::vector<std::vector<int>> AEGraph::get_paths_to(const AEGraph& other)
     return paths;
 }
 
-
 std::vector<std::vector<int>> AEGraph::possible_double_cuts() const {
     // 10p
     std::vector<std::vector<int>> res;
@@ -278,17 +276,12 @@ std::vector<std::vector<int>> AEGraph::possible_double_cuts() const {
 
 AEGraph AEGraph::double_cut(std::vector<int> where) const {
     // 10p
-    AEGraph g = *this;
-    for (auto it = 0; it < subgraphs.size(); ++it) {
-
-    }
-    g.sort();
-    return g;
+    return AEGraph("()");
 }
+
 
 std::vector<std::vector<int>> AEGraph::possible_erasures(int level) const {
     // 10p
-    std::vector<std::vector<int>> ans;
     std::vector<int> currentEdge, blank;
     std::vector<std::vector<int>> solution;
     AEGraph currentGraph = *this;
@@ -359,7 +352,78 @@ AEGraph AEGraph::erase(std::vector<int> where) const {
 
 std::vector<std::vector<int>> AEGraph::possible_deiterations() const {
     // 20p
-    return {};
+    AEGraph currentGraph = *this;
+    AEGraph prevGraph = *this;
+    std::vector<std::vector<int>> solution;
+    std::vector<int> currentEdge, blank;
+
+    std::stack<AEGraph> stk;
+    std::stack<std::vector<int>> edges;
+    bool flagFirst;
+
+    stk.push(currentGraph);
+    edges.push(blank);
+    while(!stk.empty()) {
+        currentGraph = stk.top();
+        currentEdge = edges.top();
+        stk.pop();
+        edges.pop();
+        if (currentGraph != *this && currentGraph.size() > 1) {
+            std::stack<AEGraph> stk2;
+            prevGraph = *this;
+            stk2.push(prevGraph);
+            int depth = 0;
+            std::vector<bool> viz(currentGraph.atoms.size(), false);
+            // Search similar graph
+            while(depth < currentEdge.size()) {
+                if (prevGraph.size() > 0) {
+                    // Make sure that the prevGraph is not the father of currentGraph
+                    if (depth < currentEdge.size() - 1) {
+                        for (int i = 0; i < prevGraph.subgraphs.size(); ++i) {
+                            if (prevGraph.subgraphs[i] == currentGraph) {
+                                solution.push_back(currentEdge);
+                            }
+                        }
+                    }
+                    flagFirst = false;
+                    for (int i = 0; i < currentGraph.atoms.size(); ++i) {
+                        if (viz[i] == true) {
+                            continue;
+                        }
+                        for (int j = 0; j < prevGraph.atoms.size(); ++j) {
+                            if (currentGraph.atoms[i] == prevGraph.atoms[j]) {
+                                viz[i] = true;
+                                if (flagFirst == false) {
+                                    flagFirst = true;
+                                    currentEdge.push_back(currentGraph.subgraphs.size() + i);
+                                    solution.push_back(currentEdge);
+                                } else {
+                                    currentEdge[currentEdge.size() - 1] = currentGraph.subgraphs.size() + i;
+                                    solution.push_back(currentEdge);
+                                }
+                            }
+                        }
+                    }
+                    if (flagFirst == true) {
+                        currentEdge.erase(currentEdge.begin() + currentEdge.size() - 1);
+                    }
+                }
+                AEGraph tmp = prevGraph.subgraphs[currentEdge[depth]];
+                prevGraph = tmp;
+                ++depth;
+            }
+        }
+        for (int i = 0; i < currentGraph.subgraphs.size(); ++i) {
+            if (i == 0) {
+                currentEdge.push_back(i);
+            } else {
+                currentEdge[currentEdge.size() - 1] = i;
+            }
+            stk.push(currentGraph.subgraphs[i]);
+            edges.push(currentEdge);
+        }
+    }
+    return solution;
 }
 
 AEGraph AEGraph::deiterate(std::vector<int> where) const {
