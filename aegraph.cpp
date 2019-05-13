@@ -428,5 +428,26 @@ std::vector<std::vector<int>> AEGraph::possible_deiterations() const {
 
 AEGraph AEGraph::deiterate(std::vector<int> where) const {
     // 10p
-    return AEGraph("()");
+    AEGraph deiteratedGraph = *this;
+    AEGraph *currentGraph = &deiteratedGraph;
+    int h = 0; // adancimea in arbore
+    while (h < where.size()) {
+    // cat timp adancimea < dimensiunea vectorului de deplasare
+        if (where[h] < currentGraph->subgraphs.size()) {
+          // daca directia curenta < dimensiunea subgrafului curent
+            if (h + 1 == where.size()) {
+              // daca h + 1 == dimensiunea vectorului de deplasare
+                currentGraph->subgraphs.erase(currentGraph->subgraphs.begin() + where[h]);
+                // sterg de la inceputul subgrafului, where[h]
+            } else {
+               currentGraph = &currentGraph->subgraphs[where[h]];
+               // alftel, curentGraph va fi subgraful where[h]
+            }
+        } else {
+          // altfel, sterg de la inceputul atomului
+            currentGraph->atoms.erase(currentGraph->atoms.begin() - currentGraph->subgraphs.size() + where[h]);
+        }
+        ++h;  // cresc adancimea 
+    }
+    return deiteratedGraph;
 }
