@@ -1,4 +1,5 @@
 // Copyright 2019 Luca Istrate, Danut Matei
+#include "./aegraph.h"
 #include <vector>
 #include <string>
 #include <sstream>
@@ -9,7 +10,6 @@
 #include <utility>
 #include <cassert>
 #include <stack>
-#include "./aegraph.h"
 
 std::string strip(std::string s) {
     // deletes whitespace from the beginning and end of the string
@@ -255,9 +255,9 @@ std::vector<std::vector<int>> AEGraph::possible_double_cuts() const {
     std::vector<std::vector<int>> res;
     std::vector<std::vector<int>> temp_res;
     std::vector<int> road;
-    for (auto it = 0; it < subgraphs.size(); ++it) {
-
-      if (subgraphs[it].num_atoms() == 0 && subgraphs[it].num_subgraphs() == 1) {
+    for (uint it = 0; it < subgraphs.size(); ++it) {
+      if (subgraphs[it].num_atoms() == 0 &&
+          subgraphs[it].num_subgraphs() == 1) {
         road.clear();
         road.push_back(it);
         res.push_back(road);
@@ -265,11 +265,10 @@ std::vector<std::vector<int>> AEGraph::possible_double_cuts() const {
 
       temp_res = subgraphs[it].possible_double_cuts();
 
-      for (auto jt = 0; jt < temp_res.size(); ++jt) {
+      for (uint jt = 0; jt < temp_res.size(); ++jt) {
         temp_res[jt].insert(temp_res[jt].begin(), it);
         res.push_back(temp_res[jt]);
       }
-
     }
     return res;
 }
@@ -281,24 +280,24 @@ AEGraph AEGraph::double_cut(std::vector<int> where) const {
     std::vector<AEGraph> aux;
     std::string str;
     int depth = 0;
-    while (depth < where.size()) {
-        if (where[depth] < currentGraph->subgraphs.size()) {
-            if (depth + 1 == where.size()) {
-
+    while (depth < (int)where.size()) {
+        if (where[depth] < (int)currentGraph->subgraphs.size()) {
+            if (depth + 1 == (int)where.size()) {
                 aux.push_back(currentGraph->subgraphs[where[depth]]);
 
-                currentGraph->subgraphs.erase(currentGraph->subgraphs.begin() + where[depth]);
+                currentGraph->subgraphs.erase(currentGraph->subgraphs.begin()
+                    + where[depth]);
 
-                for (auto i = 0; i < aux.size(); ++i) {
+                for (uint i = 0; i < aux.size(); ++i) {
                   AEGraph in = aux[i];
 
                   AEGraph inn = in.subgraphs[0];
 
-                  for (auto i = 0; i < inn.subgraphs.size(); ++i) {
+                  for (uint i = 0; i < inn.subgraphs.size(); ++i) {
                     currentGraph->subgraphs.push_back(inn.subgraphs[i]);
                   }
 
-                  for (auto i = 0; i < inn.atoms.size(); ++i) {
+                  for (uint i = 0; i < inn.atoms.size(); ++i) {
                     currentGraph->atoms.push_back(inn.atoms[i]);
                   }
                 }
@@ -307,7 +306,8 @@ AEGraph AEGraph::double_cut(std::vector<int> where) const {
                currentGraph = &currentGraph->subgraphs[where[depth]];
             }
         } else {
-            currentGraph->atoms.erase(currentGraph->atoms.begin() + where[depth] - currentGraph->subgraphs.size());
+            currentGraph->atoms.erase(currentGraph->atoms.begin() + where[depth]
+            - currentGraph->subgraphs.size());
         }
         ++depth;
     }
@@ -321,35 +321,39 @@ std::vector<std::vector<int>> AEGraph::possible_erasures(int level) const {
     std::vector<std::vector<int>> solution;
     AEGraph currentGraph = *this;
     AEGraph prevGraph = *this;
-
+    level--;
     std::stack<AEGraph> stk, stk2;
     std::stack<std::vector<int>> edges;
 
     stk.push(currentGraph);
     stk2.push(prevGraph);
     edges.push(blank);
-    while(!stk.empty()) {
+    while (!stk.empty()) {
         currentGraph = stk.top();
         stk.pop();
         prevGraph = stk2.top();
         stk2.pop();
         currentEdge = edges.top();
         edges.pop();
-        if (currentEdge.size() % 2 == 1 && (prevGraph.subgraphs.size() != 1 || prevGraph == *this)) {
+        if (currentEdge.size() % 2 == 1 && (prevGraph.subgraphs.size() != 1 ||
+          prevGraph == *this)) {
             solution.push_back(currentEdge);
-        } else if (currentEdge.size() % 2 == 0 && (currentGraph.atoms.size() > 1 || (currentGraph.atoms.size() == 1 && ((currentGraph == *this || currentGraph.subgraphs.size() > 0))))) {
-            for (int i = 0; i < currentGraph.atoms.size(); ++i) {
+        } else if (currentEdge.size() % 2 == 0 && (currentGraph.atoms.size() > 1
+         || (currentGraph.atoms.size() == 1 && ((currentGraph == *this ||
+           currentGraph.subgraphs.size() > 0))))) {
+            for (uint i = 0; i < currentGraph.atoms.size(); ++i) {
                 if (i == 0) {
                     currentEdge.push_back(i + currentGraph.subgraphs.size());
                     solution.push_back(currentEdge);
                 } else {
-                    currentEdge[currentEdge.size() - 1] = i + currentGraph.subgraphs.size();
+                    currentEdge[currentEdge.size() - 1] = i +
+                    currentGraph.subgraphs.size();
                     solution.push_back(currentEdge);
                 }
             }
             currentEdge.erase(currentEdge.begin() + currentEdge.size() - 1);
         }
-        for (int i = 0; i < currentGraph.subgraphs.size(); ++i) {
+        for (uint i = 0; i < currentGraph.subgraphs.size(); ++i) {
             if (i == 0) {
                 currentEdge.push_back(i);
             } else {
@@ -369,15 +373,17 @@ AEGraph AEGraph::erase(std::vector<int> where) const {
     AEGraph erasedGraph = *this;
     AEGraph *currentGraph = &erasedGraph;
     int depth = 0;
-    while (depth < where.size()) {
-        if (where[depth] < currentGraph->subgraphs.size()) {
-            if (depth == where.size() - 1) {
-                currentGraph->subgraphs.erase(currentGraph->subgraphs.begin() + where[depth]);
+    while (depth < (int)where.size()) {
+        if (where[depth] < (int)currentGraph->subgraphs.size()) {
+            if (depth == (int)where.size() - 1) {
+                currentGraph->subgraphs.erase(currentGraph->subgraphs.begin() +
+                where[depth]);
             } else {
                currentGraph = &currentGraph->subgraphs[where[depth]];
             }
         } else {
-            currentGraph->atoms.erase(currentGraph->atoms.begin() + where[depth] - currentGraph->subgraphs.size());
+            currentGraph->atoms.erase(currentGraph->atoms.begin() + where[depth]
+            - currentGraph->subgraphs.size());
         }
         ++depth;
     }
@@ -398,7 +404,7 @@ std::vector<std::vector<int>> AEGraph::possible_deiterations() const {
 
     stk.push(currentGraph);
     edges.push(blank);
-    while(!stk.empty()) {
+    while (!stk.empty()) {
         currentGraph = stk.top();
         currentEdge = edges.top();
         stk.pop();
@@ -410,37 +416,41 @@ std::vector<std::vector<int>> AEGraph::possible_deiterations() const {
             int depth = 0;
             std::vector<bool> viz(currentGraph.atoms.size(), false);
             // Search similar graph
-            while(depth < currentEdge.size()) {
+            while (depth < (int)currentEdge.size()) {
                 if (prevGraph.size() > 0) {
-                    // Make sure that the prevGraph is not the father of currentGraph
-                    if (depth < currentEdge.size() - 1) {
-                        for (int i = 0; i < prevGraph.subgraphs.size(); ++i) {
+                    // Make sure that the prevGraph
+                    // is not the father of currentGraph
+                    if (depth < (int)currentEdge.size() - 1) {
+                        for (uint i = 0; i < prevGraph.subgraphs.size(); ++i) {
                             if (prevGraph.subgraphs[i] == currentGraph) {
                                 solution.push_back(currentEdge);
                             }
                         }
                     }
                     flagFirst = false;
-                    for (int i = 0; i < currentGraph.atoms.size(); ++i) {
+                    for (uint i = 0; i < currentGraph.atoms.size(); ++i) {
                         if (viz[i] == true) {
                             continue;
                         }
-                        for (int j = 0; j < prevGraph.atoms.size(); ++j) {
+                        for (uint j = 0; j < prevGraph.atoms.size(); ++j) {
                             if (currentGraph.atoms[i] == prevGraph.atoms[j]) {
                                 viz[i] = true;
                                 if (flagFirst == false) {
                                     flagFirst = true;
-                                    currentEdge.push_back(currentGraph.subgraphs.size() + i);
+                                    currentEdge.push_back(
+                                      currentGraph.subgraphs.size() + i);
                                     solution.push_back(currentEdge);
                                 } else {
-                                    currentEdge[currentEdge.size() - 1] = currentGraph.subgraphs.size() + i;
+                                    currentEdge[currentEdge.size() - 1] =
+                                    currentGraph.subgraphs.size() + i;
                                     solution.push_back(currentEdge);
                                 }
                             }
                         }
                     }
                     if (flagFirst == true) {
-                        currentEdge.erase(currentEdge.begin() + currentEdge.size() - 1);
+                        currentEdge.erase(currentEdge.begin() +
+                        currentEdge.size() - 1);
                     }
                 }
                 AEGraph tmp = prevGraph.subgraphs[currentEdge[depth]];
@@ -448,7 +458,7 @@ std::vector<std::vector<int>> AEGraph::possible_deiterations() const {
                 ++depth;
             }
         }
-        for (int i = 0; i < currentGraph.subgraphs.size(); ++i) {
+        for (uint i = 0; i < currentGraph.subgraphs.size(); ++i) {
             if (i == 0) {
                 currentEdge.push_back(i);
             } else {
@@ -465,14 +475,15 @@ AEGraph AEGraph::deiterate(std::vector<int> where) const {
     // 10p
     AEGraph deiteratedGraph = *this;
     AEGraph *currentGraph = &deiteratedGraph;
-    int h = 0; // adancimea in arbore
-    while (h < where.size()) {
+    int h = 0;  // adancimea in arbore
+    while (h < (int)where.size()) {
     // cat timp adancimea < dimensiunea vectorului de deplasare
-        if (where[h] < currentGraph->subgraphs.size()) {
+        if (where[h] < (int)currentGraph->subgraphs.size()) {
           // daca directia curenta < dimensiunea subgrafului curent
-            if (h + 1 == where.size()) {
+            if (h + 1 == (int)where.size()) {
               // daca h + 1 == dimensiunea vectorului de deplasare
-                currentGraph->subgraphs.erase(currentGraph->subgraphs.begin() + where[h]);
+                currentGraph->subgraphs.erase(currentGraph->subgraphs.begin() +
+                where[h]);
                 // sterg de la inceputul subgrafului, where[h]
             } else {
                currentGraph = &currentGraph->subgraphs[where[h]];
@@ -480,9 +491,10 @@ AEGraph AEGraph::deiterate(std::vector<int> where) const {
             }
         } else {
           // altfel, sterg de la inceputul atomului
-            currentGraph->atoms.erase(currentGraph->atoms.begin() - currentGraph->subgraphs.size() + where[h]);
+            currentGraph->atoms.erase(currentGraph->atoms.begin() -
+            currentGraph->subgraphs.size() + where[h]);
         }
-        ++h;  // cresc adancimea 
+        ++h;  // cresc adancimea
     }
     return deiteratedGraph;
 }
