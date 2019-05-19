@@ -1,4 +1,4 @@
-// Copyright 2019 Luca Istrate, Danut Matei
+// Copyright 2019 Topala Andrei, Manolea Dragos
 #ifndef AEGRAPH_H_
 #define AEGRAPH_H_
 
@@ -8,7 +8,7 @@
 class AEGraph {
  public:
     explicit AEGraph(std::string representation);
-    
+
     std::string repr() const;
 
     void sort();
@@ -28,7 +28,7 @@ class AEGraph {
     std::vector<std::vector<int>> possible_double_cuts() const;
     AEGraph double_cut(std::vector<int> where) const;
 
-    std::vector<std::vector<int>> possible_erasures(int level = -1) const;
+    std::vector<std::vector<int>> possible_erasures() const;
     AEGraph erase(std::vector<int>) const;
 
     std::vector<std::vector<int>> possible_deiterations() const;
